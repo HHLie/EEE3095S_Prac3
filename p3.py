@@ -3,6 +3,7 @@ import RPi.GPIO as GPIO
 import random
 import ES2EEPROMUtils
 import os
+import time
 
 # some global variables that need to change as we run the program
 end_of_game = None  # set if the user wins or ends the game
@@ -14,6 +15,8 @@ btn_submit = 16
 btn_increase = 18
 buzzer = None
 eeprom = ES2EEPROMUtils.ES2EEPROM()
+one = 0
+two = 0
 
 
 # Print the game banner
@@ -64,9 +67,23 @@ def display_scores(count, raw_data):
 # Setup Pins
 def setup():
     # Setup board mode
+    GPIO.setmode(GPIO.BOARD)
     # Setup regular GPIO
+
+    #LEDS 
+    for pin in LED_value:
+        GPIO.setup(pin,GPIO.OUT)
+        #GPIO.output(pin,LOW)
+    GPIO.setup(LED_accuracy,GPIO.OUT)
+
+    #buttons
+    GPIO.setup(btn_submit , GPIO.IN , pull_up_down = GPIO.PUD_UP)
+    GPIO.setup(btn_increase , GPIO.IN , pull_up_down = GPIO.PUD_UP)
+
     # Setup PWM channels
     # Setup debouncing and callbacks
+    GPIO.add_event_detect(btn_submit, GPIO.RISING, callback = btn_guess_pressed, bouncetime=300)
+    GPIO.add_event_detect(btn_increase, GPIO.RISING, callback = btn_increase_pressed, bouncetime=300)
     pass
 
 
@@ -99,6 +116,17 @@ def generate_number():
 
 # Increase button pressed
 def btn_increase_pressed(channel):
+    global two
+    time.sleep(.01)
+    print("two :" , two)
+    if two == 0:
+        print("set two high")
+        GPIO.output(13,GPIO.HIGH)
+        two = 1
+    elif two == 1:
+        print("set two low")
+        GPIO.output(13,GPIO.LOW)
+        two = 0
     # Increase the value shown on the LEDs
     # You can choose to have a global variable store the user's current guess, 
     # or just pull the value off the LEDs when a user makes a guess
@@ -107,6 +135,17 @@ def btn_increase_pressed(channel):
 
 # Guess button
 def btn_guess_pressed(channel):
+    global one
+    time.sleep(.01)
+    print("one :" , one)
+    if one == 0:
+        GPIO.output(11,GPIO.HIGH)
+        print("set one high")
+        one = 1
+    elif one == 1:
+        print("set one low")
+        GPIO.output(11,GPIO.LOW)
+        one = 0
     # If they've pressed and held the button, clear up the GPIO and take them back to the menu screen
     # Compare the actual value with the user value displayed on the LEDs
     # Change the PWM LED
@@ -144,7 +183,7 @@ if __name__ == "__main__":
     try:
         # Call setup function
         setup()
-        welcome()
+        #welcome()
         while True:
             menu()
             pass
