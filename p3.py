@@ -13,10 +13,13 @@ LED_value = [11, 13, 15]
 LED_accuracy = 32
 btn_submit = 16
 btn_increase = 18
-buzzer = None
+buzzer = 33
 eeprom = ES2EEPROMUtils.ES2EEPROM()
-one = 0
+pwm_LED = None
+pwm_buzzer = None
 two = 0
+Guess_value = 0
+
 
 
 # Print the game banner
@@ -34,7 +37,7 @@ def welcome():
 
 # Print the game menu
 def menu():
-    global end_of_game
+    global end_of_game, Guess_value
     option = input("Select an option:   H - View High Scores     P - Play Game       Q - Quit\n")
     option = option.upper()
     if option == "H":
@@ -47,6 +50,7 @@ def menu():
         print("Starting a new round!")
         print("Use the buttons on the Pi to make and submit your guess!")
         print("Press and hold the guess button to cancel your game")
+        end_of_game = False
         value = generate_number()
         while not end_of_game:
             pass
@@ -66,24 +70,35 @@ def display_scores(count, raw_data):
 
 # Setup Pins
 def setup():
+    global pwm_LED,pwm_buzzer, Guess_value
+    #set global guess value to 0
+    Guess_value = 0
+
     # Setup board mode
     GPIO.setmode(GPIO.BOARD)
     # Setup regular GPIO
-
     #LEDS 
     for pin in LED_value:
         GPIO.setup(pin,GPIO.OUT)
-        #GPIO.output(pin,LOW)
-    GPIO.setup(LED_accuracy,GPIO.OUT)
-
+        GPIO.output(pin,GPIO.LOW)
+    
     #buttons
     GPIO.setup(btn_submit , GPIO.IN , pull_up_down = GPIO.PUD_UP)
     GPIO.setup(btn_increase , GPIO.IN , pull_up_down = GPIO.PUD_UP)
 
     # Setup PWM channels
+    GPIO.setup(LED_accuracy,GPIO.OUT)
+    GPIO.setup(buzzer,GPIO.OUT)
+    #setup for LED_accuracy
+    pwm_LED = GPIO.PWM(LED_accuracy, 1000)
+    pwm_LED.start(0)
+    #setup for the buzzer
+    pwm_buzzer = GPIO.PWM(buzzer, 1000)
+    pwm_buzzer.start(0)
+
     # Setup debouncing and callbacks
-    GPIO.add_event_detect(btn_submit, GPIO.RISING, callback = btn_guess_pressed, bouncetime=300)
-    GPIO.add_event_detect(btn_increase, GPIO.RISING, callback = btn_increase_pressed, bouncetime=300)
+    GPIO.add_event_detect(btn_submit, GPIO.FALLING, callback = btn_guess_pressed, bouncetime=200)
+    GPIO.add_event_detect(btn_increase, GPIO.FALLING, callback = btn_increase_pressed, bouncetime=200)
     pass
 
 
@@ -116,17 +131,21 @@ def generate_number():
 
 # Increase button pressed
 def btn_increase_pressed(channel):
-    global two
-    time.sleep(.01)
-    print("two :" , two)
-    if two == 0:
-        print("set two high")
-        GPIO.output(13,GPIO.HIGH)
-        two = 1
-    elif two == 1:
-        print("set two low")
-        GPIO.output(13,GPIO.LOW)
-        two = 0
+    global two, pwm_LED, Guess_value
+    time.sleep(0.1)
+    Guess_value += 1
+    temp_list = list(reversed(str(bin(Guess_value))[2:]))
+    missing = 3 - len(temp_list)
+    for i in range(missing):
+        temp_list.append('0')
+    temp_list = list(reversed(temp_list))
+    print(temp_list)
+    for pin in range(3):
+        print(temp_list[pin],pin)
+        if temp_list[pin] == '1':
+            GPIO.output(LED_value[pin],GPIO.HIGH)
+        else:
+            GPIO.output(LED_value[pin],GPIO.LOW)
     # Increase the value shown on the LEDs
     # You can choose to have a global variable store the user's current guess, 
     # or just pull the value off the LEDs when a user makes a guess
@@ -135,17 +154,24 @@ def btn_increase_pressed(channel):
 
 # Guess button
 def btn_guess_pressed(channel):
-    global one
-    time.sleep(.01)
-    print("one :" , one)
-    if one == 0:
-        GPIO.output(11,GPIO.HIGH)
-        print("set one high")
-        one = 1
-    elif one == 1:
-        print("set one low")
-        GPIO.output(11,GPIO.LOW)
-        one = 0
+    global one, end_of_game, pwm_LED, pwm_buzzer, Guess_value
+    time.sleep(0.1) # wait
+    while GPIO.input(channel) == GPIO.LOW:
+        time.sleep(0.5)
+        if GPIO.input(channel) == GPIO.LOW:
+            print("hold")
+            os.system('clear')
+            pwm_LED.stop() #stop LED_accuracy
+            pwm_buzzer.stop()#stop the buzzer
+            GPIO.cleanup() #clear the gpio
+            setup()        #redo setup
+            end_of_game = True
+            break
+        else:
+            print("press")
+            Guess_value = 0
+        
+
     # If they've pressed and held the button, clear up the GPIO and take them back to the menu screen
     # Compare the actual value with the user value displayed on the LEDs
     # Change the PWM LED
@@ -183,11 +209,13 @@ if __name__ == "__main__":
     try:
         # Call setup function
         setup()
-        #welcome()
+        welcome()
         while True:
             menu()
             pass
     except Exception as e:
         print(e)
     finally:
+        pwm_LED.stop() #stop LED_accuracy
+        pwm_buzzer.stop()#stop the buzzer
         GPIO.cleanup()
