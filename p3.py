@@ -67,6 +67,8 @@ def display_scores(count, raw_data):
     # print the scores to the screen in the expected format
     print("There are {} scores. Here are the top 3!".format(count))
     # print out the scores in the required format
+    for index, score in enumerate(raw_data[0:3]):
+        print("{} - {} took {} guesses.".format(index+1,score[0],score[1]))
     pass
 
 
@@ -110,29 +112,36 @@ def fetch_scores():
     # get however many scores there are
     score_count = eeprom.read_byte(0)
     # Get the scores
- 	score_data = eeprom.read_block(1, 4*score_count)
- 	# convert the codes back to ascii
- 	scores = []
-    length = len(score)
- 	for i in range((length/4)):
- 	    temp_str = ""
- 	    for j in range(3):
- 	        temp_str += (chr(score_data[(4 * i) + j]))
- 	    scores.append([temp_str, score_data[4 * i + 3]])
-
+    score_data = eeprom.read_block(1, 4*score_count)
     # convert the codes back to ascii
-    
+    scores = []
+    length = len(score_data)
+    for i in range((int)(length/4)):
+        str_temp = ""
+        for j in range(3):
+            str_temp += chr(score_data[4*i+j])
+        scores.append([str_temp,score_data[4*i+3]])
     # return back the results
     return score_count, scores
 
 
 # Save high scores
-def save_scores():
+def save_scores(name, guesses):
     # fetch scores
+    count, s = fetch_scores()
     # include new score
+    s.append([name,guesses])
     # sort
+    s.sort(key=lambda x: x[1])
     # update total amount of scores
+    eeprom.write_block(0, [count+1])
     # write new scores
+    for i, score in enumerate(s):
+            data_to_write = []
+            for letter in score[0]:
+                data_to_write.append(ord(letter))
+            data_to_write.append(score[1])
+            eeprom.write_block(i+1, data_to_write)
     pass
 
 
@@ -184,6 +193,8 @@ def btn_guess_pressed(channel):
             print("press")
             if Guess_value == value:
                 print("gottem")
+                option = input("Enter Your Name:")
+                save_scores(option,Guess_count)
                 reset_func()
                 end_of_game = True
             else:
