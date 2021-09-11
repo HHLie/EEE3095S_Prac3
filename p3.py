@@ -76,8 +76,6 @@ def display_scores(count, raw_data):
 # Setup Pins
 def setup():
     global pwm_LED,pwm_buzzer, Guess_value
-    #set global guess value to 0
-
     # Setup board mode
     GPIO.setmode(GPIO.BOARD)
     # Setup regular GPIO
@@ -178,7 +176,8 @@ def btn_guess_pressed(channel):
     time.sleep(0.1) # wait
     while GPIO.input(channel) == GPIO.LOW:
         time.sleep(0.5) # wait for hold
-        # If they've pressed and held the button, clear up the GPIO and take them back to the menu screen
+        # If they've pressed and held the button, clear up the GPIO and take them back to 
+        #the menu screen
         if GPIO.input(channel) == GPIO.LOW:
             print("hold")
             os.system('clear')
