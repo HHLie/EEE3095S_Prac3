@@ -76,6 +76,8 @@ def display_scores(count, raw_data):
 # Setup Pins
 def setup():
     global pwm_LED,pwm_buzzer, Guess_value
+    #set global guess value to 0
+
     # Setup board mode
     GPIO.setmode(GPIO.BOARD)
     # Setup regular GPIO
@@ -176,8 +178,7 @@ def btn_guess_pressed(channel):
     time.sleep(0.1) # wait
     while GPIO.input(channel) == GPIO.LOW:
         time.sleep(0.5) # wait for hold
-        # If they've pressed and held the button, clear up the GPIO and take them back to 
-        #the menu screen
+        # If they've pressed and held the button, clear up the GPIO and take them back to the menu screen
         if GPIO.input(channel) == GPIO.LOW:
             print("hold")
             os.system('clear')
@@ -228,17 +229,17 @@ def trigger_buzzer():
     # If the user is off by an absolute value of 3, the buzzer should sound once every second
     if buzz == 1:
         pwm_buzzer.ChangeFrequency(4)  
-        pwm_buzzer.ChangeDutyCycle(20)
+        pwm_buzzer.ChangeDutyCycle(10)
         pass
     # If the user is off by an absolute value of 2, the buzzer should sound twice every second
     elif buzz == 2:
         pwm_buzzer.ChangeFrequency(2)  
-        pwm_buzzer.ChangeDutyCycle(20)
+        pwm_buzzer.ChangeDutyCycle(10)
         pass
     # If the user is off by an absolute value of 1, the buzzer should sound 4 times a second
     elif buzz == 3:
         pwm_buzzer.ChangeFrequency(1)  
-        pwm_buzzer.ChangeDutyCycle(20)
+        pwm_buzzer.ChangeDutyCycle(10)
         pass
     # Else stop the buzzer if the absolute difference is greater than 3
     else:
@@ -252,7 +253,6 @@ def reset_func():
     pwm_buzzer.ChangeDutyCycle(0)#stop the buzzer
     for pin in LED_value:
         GPIO.output(pin,GPIO.LOW)
-    pass
 
 if __name__ == "__main__":
     try:
