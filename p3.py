@@ -192,6 +192,7 @@ def btn_guess_pressed(channel):
             # if it's an exact guess:
             if Guess_value == value:
                 os.system('clear')
+                print("!!!YOU WON!!!")
                 print("You took {} guesses.".format(Guess_count))
                 # Disable LEDs and Buzzer
                 reset_func()
@@ -246,7 +247,6 @@ def trigger_buzzer():
 
 # reset function for pwm modules, LEDS
 def reset_func():
-    global Guess_count, Guess_value
     pwm_LED.ChangeDutyCycle(0) #stop LED_accuracy
     pwm_buzzer.ChangeDutyCycle(0)#stop the buzzer
     for pin in LED_value:
