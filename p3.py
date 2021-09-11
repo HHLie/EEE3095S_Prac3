@@ -252,6 +252,7 @@ def reset_func():
     pwm_buzzer.ChangeDutyCycle(0)#stop the buzzer
     for pin in LED_value:
         GPIO.output(pin,GPIO.LOW)
+    pass
 
 if __name__ == "__main__":
     try:
