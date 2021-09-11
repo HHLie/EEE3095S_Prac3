@@ -76,8 +76,6 @@ def display_scores(count, raw_data):
 # Setup Pins
 def setup():
     global pwm_LED,pwm_buzzer, Guess_value
-    #set global guess value to 0
-
     # Setup board mode
     GPIO.setmode(GPIO.BOARD)
     # Setup regular GPIO
